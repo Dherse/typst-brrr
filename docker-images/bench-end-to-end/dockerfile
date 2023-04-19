@@ -1,0 +1,27 @@
+FROM rust:1.68.2-alpine3.17
+
+# Add the hyperfine benchmark runner
+RUN apk add hyperfine
+
+# Copy the bench.sh file into the container
+COPY bench.sh /bin/bench.sh
+
+# Make the bench.sh file executable
+RUN chmod +x /bin/bench.sh
+
+# The binary to run (where the binary is located)
+WORKDIR /binary
+
+# The samples to write to (where the output JSON files will be written to)
+WORKDIR /samples
+
+# Set the working directory (where the input files are)
+WORKDIR /data
+
+# Set the environment variables
+ENV FILE_LIST=""
+ENV WARMUP=3
+ENV RUNS=30
+
+# Run the bench.sh file
+ENTRYPOINT [ "/bin/bench.sh" ]

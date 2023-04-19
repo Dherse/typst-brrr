@@ -1,0 +1,17 @@
+FROM alpine:3.17.3
+
+# Get git
+RUN apk add --no-cache git
+RUN apk add --no-cache openssh
+
+# Copy the clone.sh file into the container
+COPY clone.sh /bin/clone.sh
+
+# Make the clone.sh file executable
+RUN chmod +x /bin/clone.sh
+
+# set the working directory
+WORKDIR /data
+
+# Run the clone.sh file
+ENTRYPOINT ["/bin/clone.sh"]

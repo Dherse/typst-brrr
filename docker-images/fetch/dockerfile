@@ -1,0 +1,19 @@
+FROM rust:1.68.2-alpine3.17
+
+# Copy the fetch.sh file into the container
+COPY fetch.sh /bin/fetch.sh
+
+# Make the fetch.sh file executable
+RUN chmod +x /bin/fetch.sh
+
+# set the working directory
+WORKDIR /cargo
+
+# Set the home for cargo
+ENV CARGO_HOME=/cargo
+
+# set the working directory
+WORKDIR /data
+
+# Run the fetch.sh file
+ENTRYPOINT [ "/bin/fetch.sh" ]

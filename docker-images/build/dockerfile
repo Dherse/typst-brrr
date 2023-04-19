@@ -1,0 +1,22 @@
+FROM rust:1.68.2-alpine3.17
+
+# Add the musl-dev package
+RUN apk add --no-cache musl-dev
+
+# Copy the build.sh file into the container
+COPY build.sh /bin/build.sh
+
+# Make the build.sh file executable
+RUN chmod +x /bin/build.sh
+
+# set the working directory
+WORKDIR /cargo
+
+# Set the home for cargo
+ENV CARGO_HOME=/cargo
+
+# set the working directory
+WORKDIR /data
+
+# Run the build.sh file
+ENTRYPOINT [ "/bin/build.sh" ]
