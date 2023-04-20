@@ -1,21 +1,39 @@
 use std::path::PathBuf;
 
 use anyhow::Context;
-use bollard::Docker;
-use build_images::build_images;
-use clap::Parser;
-use tokio::fs::File;
+use build_images::{BENCH_END_TO_END, BUILD_TAR, CLONE_TAR, FETCH_TAR};
+use docker::Mount;
+use tracing::Instrument;
+use tracing_subscriber::{filter::EnvFilter, fmt::SubscriberBuilder};
+
+use crate::docker::Docker;
 
 pub mod build_images;
 pub mod config;
+pub mod docker;
 pub mod pipeline;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let docker = Docker::connect_with_local_defaults()?;
+    SubscriberBuilder::default()
+        .with_env_filter(EnvFilter::from_default_env())
+        .without_time()
+        .init();
 
-    let images = build_images(&docker).await?;
-    eprintln!("Built images");
+    let docker = Docker::new()?;
+
+    let clone = docker
+        .create_image("typst-clone", CLONE_TAR.to_vec())
+        .await?;
+    let fetch = docker
+        .create_image("typst-fetch", FETCH_TAR.to_vec())
+        .await?;
+    let build = docker
+        .create_image("typst-build", BUILD_TAR.to_vec())
+        .await?;
+    let bench = docker
+        .create_image("typst-bench", BENCH_END_TO_END.to_vec())
+        .await?;
 
     let git_dir = PathBuf::from("./_git/");
     let cargo_dir = PathBuf::from("./_cargo/");
@@ -38,28 +56,58 @@ async fn main() -> anyhow::Result<()> {
         .await
         .context("failed to create sample dir")?;
 
-    images
-        .run_clone(&"https://github.com/Dherse/typst", "content-rework", &git_dir)
+    clone
+        .run_container(
+            vec![
+                format!("REPO_URL={}", "https://github.com/Dherse/typst"),
+                format!("COMMIT={}", "content-rework"),
+            ],
+            vec![Mount::new(&git_dir, "/data")],
+        )
+        .instrument(tracing::info_span!("clone"))
         .await?;
-    eprintln!("cloned");
 
-    images
-        .run_fetch(&git_dir, &cargo_dir)
-        .await
-        .context("failed to run fetch")?;
-    eprintln!("fetched");
+    fetch
+        .run_container(
+            vec![],
+            vec![
+                Mount::new(&git_dir, "/data"),
+                Mount::new(&cargo_dir, "/cargo"),
+            ],
+        )
+        .instrument(tracing::info_span!("fetch"))
+        .await?;
 
-    images
-        .run_build(&git_dir, &cargo_dir)
-        .await
-        .context("failed to run fetch")?;
-    eprintln!("built");
+    build
+        .run_container(
+            vec![],
+            vec![
+                Mount::new(&git_dir, "/data"),
+                Mount::new(&cargo_dir, "/cargo"),
+            ],
+        )
+        .instrument(tracing::info_span!("build"))
+        .await?;
 
-    images
-        .run_e2e_benches(&git_dir, &cargo_dir, &sample_dir, &data_dir, &[ "/samples/conformal_prediction/conformal_prediction.typ"])
-        .await
-        .context("failed to run e2e benches")?;
-    eprintln!("ran e2e benches");
+    bench
+        .run_container(
+            vec![
+                format!(
+                    "FILE_LIST={}",
+                    "/samples/conformal_prediction/conformal_prediction.typ"
+                ),
+                format!("WARMUPS={}", 5),
+                format!("RUNS={}", 20),
+            ],
+            vec![
+                Mount::new(git_dir.join("target").join("release"), "/binary"),
+                Mount::new(&cargo_dir, "/cargo"),
+                Mount::new(&sample_dir, "/samples"),
+                Mount::new(&data_dir, "/data"),
+            ],
+        )
+        .instrument(tracing::info_span!("bench"))
+        .await?;
 
     Ok(())
 }
