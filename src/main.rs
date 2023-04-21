@@ -25,9 +25,11 @@ async fn main() -> anyhow::Result<()> {
     let clone = docker
         .create_image("typst-clone", CLONE_TAR.to_vec())
         .await?;
+
     let fetch = docker
         .create_image("typst-fetch", FETCH_TAR.to_vec())
         .await?;
+    
     let build = docker
         .create_image("typst-build", BUILD_TAR.to_vec())
         .await?;
@@ -97,7 +99,7 @@ async fn main() -> anyhow::Result<()> {
                     "/samples/conformal_prediction/conformal_prediction.typ"
                 ),
                 format!("WARMUPS={}", 5),
-                format!("RUNS={}", 20),
+                format!("RUNS={}", 200),
             ],
             vec![
                 Mount::new(git_dir.join("target").join("release"), "/binary"),

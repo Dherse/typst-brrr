@@ -4,20 +4,28 @@ use std::{
         atomic::{AtomicBool, Ordering},
         Arc,
     },
-    time::Duration,
+    time::Duration, ops::{Deref, Not},
 };
 
 use anyhow::Context;
 use bollard::{
-    container::{Config, CreateContainerOptions},
+    container::{Config, CreateContainerOptions, NetworkingConfig},
     image::BuildImageOptions,
-    service::{HostConfig, MountTypeEnum},
+    service::{HostConfig, MountTypeEnum}, errors::Error,
 };
 use futures_util::StreamExt;
 use rand::Rng;
 use tokio::{task::JoinHandle, time::timeout};
 
 pub struct Docker(bollard::Docker);
+
+impl Deref for Docker {
+    type Target = bollard::Docker;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 impl Docker {
     pub fn new() -> anyhow::Result<Self> {
@@ -66,20 +74,61 @@ impl Docker {
             }
         }
 
-        Ok(Image(self, name.as_ref().to_string()))
+        Ok(Image {
+            docker: self,
+            name: name.as_ref().to_string(),
+            network: None,
+        })
     }
 
-    pub async fn run_container(
-        &self,
-        image: &Image<'_>,
-        env: Vec<String>,
-        mounts: Vec<Mount>,
-    ) -> anyhow::Result<()> {
+    pub async fn create_network(&self, name: String, internal: bool) -> anyhow::Result<Network> {
+        let network = self
+            .0
+            .create_network(bollard::network::CreateNetworkOptions {
+                name: name.clone(),
+                internal,
+                ..Default::default()
+            })
+            .await
+            .context("failed to create network")?;
+
+        if let Some(warning) = network.warning {
+            tracing::warn!("{}", warning.trim());
+        }
+
+        Ok(Network {
+            docker: self,
+            name,
+            id: network.id.context("no id returned for network")?,
+        })
+    }
+}
+
+pub struct Network<'a> {
+    docker: &'a Docker,
+    name: String,
+    id: String,
+}
+
+pub struct Image<'a> {
+    docker: &'a Docker,
+    name: String,
+    network: Option<Network<'a>>,
+}
+
+impl<'a> Image<'a> {
+    pub fn with_network(mut self, network: Network<'a>) -> Self {
+        self.network = Some(network);
+        self
+    }
+
+    pub async fn run_container(&self, env: Vec<String>, mounts: Vec<Mount>) -> anyhow::Result<()> {
         let host_config = HostConfig {
             auto_remove: Some(true),
             privileged: Some(false),
             memory: Some(4 << 30),
             cpuset_cpus: Some("3".to_string()),
+            network_mode: Some(self.network.as_ref().map_or_else(|| "none".to_string(), |n| n.id.clone())),
             mounts: Some(
                 mounts
                     .into_iter()
@@ -109,9 +158,10 @@ impl Docker {
         };
 
         let config = Config {
-            image: Some(image.1.clone()),
+            image: Some(self.name.clone()),
             host_config: Some(host_config),
             env: Some(env),
+            network_disabled: Some(self.network.is_none()),
             ..Default::default()
         };
 
@@ -122,7 +172,7 @@ impl Docker {
             .collect::<String>();
 
         let response = self
-            .0
+            .docker
             .create_container(
                 Some(CreateContainerOptions {
                     name: &name,
@@ -134,12 +184,12 @@ impl Docker {
             .context("failed to create container")?;
 
         let id = response.id;
-        tracing::info!(id = id, name = name, image = image.1, "Created container");
+        tracing::info!(id = id, name = name, image = self.name, "Created container");
         for warn in response.warnings {
             tracing::warn!("{}", warn.trim());
         }
 
-        self.0
+        self.docker
             .start_container::<&str>(&id, None)
             .await
             .context("failed to start container")?;
@@ -154,7 +204,7 @@ impl Docker {
         };
 
         let mut output = self
-            .0
+            .docker
             .attach_container(&id, Some(attach_options))
             .await
             .context("failed to attach to container")?
@@ -176,9 +226,19 @@ impl Docker {
             }
         });
 
-        let mut wait_stream = self.0.wait_container::<String>(&id, None);
+        let mut wait_stream = self.docker.wait_container::<String>(&id, None);
         while let Some(out) = wait_stream.next().await {
-            out.context("failed to wait for container")?;
+            if let Err(err) = out {
+                match err {
+                    Error::DockerResponseServerError { status_code, .. }  if status_code == 404 => {
+                        tracing::warn!("Container exited before we could wait for it");
+                        break;
+                    },
+                    _ => {
+                        return Err(err).context("failed to wait for container");
+                    }
+                }
+            }
         }
 
         is_stopped.store(true, Ordering::Relaxed);
@@ -186,14 +246,6 @@ impl Docker {
         logging.await??;
 
         Ok(())
-    }
-}
-
-pub struct Image<'a>(&'a Docker, String);
-
-impl<'a> Image<'a> {
-    pub async fn run_container(&self, env: Vec<String>, mounts: Vec<Mount>) -> anyhow::Result<()> {
-        self.0.run_container(self, env, mounts).await
     }
 }
 
