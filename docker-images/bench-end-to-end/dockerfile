@@ -5,18 +5,15 @@ RUN apk add hyperfine
 
 # Copy the bench.sh file into the container
 COPY bench.sh /bin/bench.sh
+COPY cobench /bin/cobench
 
 # Make the bench.sh file executable
 RUN chmod +x /bin/bench.sh
+RUN chmod +x /bin/cobench
 
-# The binary to run (where the binary is located)
-WORKDIR /binary
-
-# The samples to write to (where the output JSON files will be written to)
-WORKDIR /samples
-
-# Set the working directory (where the input files are)
 WORKDIR /typster
+WORKDIR /samples
+WORKDIR /data
 
 # Set the environment variables
 ENV FILE_LIST=""

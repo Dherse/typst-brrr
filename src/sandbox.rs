@@ -28,9 +28,9 @@ impl Drop for Sandbox {
             tracing::error!("failed to remove cargo directory: {}", e);
         }
 
-        if let Err(e) = std::fs::remove_dir_all(&self.results) {
+        /*if let Err(e) = std::fs::remove_dir_all(&self.results) {
             tracing::error!("failed to remove results directory: {}", e);
-        }
+        }*/
     }
 }
 
@@ -41,11 +41,11 @@ impl Sandbox {
         commit: S2,
     ) -> anyhow::Result<Self> {
         //generate random ID of length 10 using the rand crate
-        let id = rand::thread_rng()
+        let id = /*rand::thread_rng()
             .sample_iter(&rand::distributions::Alphanumeric)
             .take(10)
             .map(char::from)
-            .collect::<String>();
+            .collect::<String>()*/ "2fcQhM9muA".to_string();
 
         let git = root
             .as_ref()
@@ -148,6 +148,46 @@ impl Sandbox {
         cmd.arg("typst/build");
 
         let out = run_command_with_timout(cmd, Duration::from_secs(1200)).await?;
+
+        match out {
+            Some(out) => Ok(out),
+            None => bail!("failed to build project"),
+        }
+    }
+
+    pub async fn bench_e2e<P: AsRef<Path>>(&self, samples: P) -> anyhow::Result<Output> {
+        let mut cmd = basic_secure_docker_command(Duration::from_secs(12000), false, 1.1);
+
+        cmd.arg("--mount");
+        cmd.arg(format!(
+            "type=bind,source={},target=/typster,readonly",
+            self.git.display()
+        ));
+
+        cmd.arg("--mount");
+        cmd.arg(format!(
+            "type=bind,source={},target=/data",
+            self.results.display()
+        ));
+
+        cmd.arg("--mount");
+        cmd.arg(format!(
+            "type=bind,source={},target=/samples,readonly",
+            samples.as_ref().display()
+        ));
+
+        cmd.arg("--env");
+        cmd.arg("FILE_LIST=/samples/conformal_prediction/conformal_prediction.typ");
+
+        cmd.arg("--env");
+        cmd.arg("WARMUPS=10");
+
+        cmd.arg("--env");
+        cmd.arg("RUNS=200");
+
+        cmd.arg("typst/bench-end-to-end");
+
+        let out = run_command_with_timout(cmd, Duration::from_secs(12000)).await?;
 
         match out {
             Some(out) => Ok(out),

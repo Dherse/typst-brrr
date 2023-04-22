@@ -17,6 +17,8 @@ async fn main() -> anyhow::Result<()> {
     tokio::fs::create_dir_all(&root_dir).await.context("failed to create root directory")?;
     let root_dir = tokio::fs::canonicalize(root_dir).await.context("failed to canonicalize root directory")?;
 
+    let samples = tokio::fs::canonicalize("./samples").await.context("failed to canonicalize samples directory")?;
+
     let sandbox = sandbox::Sandbox::new(
         &root_dir,
         "https://github.com/Dherse/typst",
@@ -26,6 +28,7 @@ async fn main() -> anyhow::Result<()> {
     dbg!(sandbox.clone().await?);
     dbg!(sandbox.fetch().await?);
     dbg!(sandbox.build().await?);
+    dbg!(sandbox.bench_e2e(&samples).await?);
 
     Ok(())
 }

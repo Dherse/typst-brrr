@@ -2,9 +2,10 @@
 
 set -eu
 
-hyperfine --runs ${RUNS} \
-    --warmup ${WARMUPS} \
-    -N \
-    --parameter-list file ${FILE_LIST} \
-    --export-json "/data/run.json" \
-    -- "/binary/typst compile {file} /dev/null"
+IFS=','; for file in ${FILE_LIST} ; do
+    /bin/cobench \
+        -n ${RUNS} \
+        -w ${WARMUPS} \
+        --export-json /data/$(basename $file .typ).json \
+        "/typster/target/release/typst compile ${file} /dev/null"
+done
