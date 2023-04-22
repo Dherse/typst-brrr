@@ -131,7 +131,7 @@ impl Sandbox {
     }
 
     pub async fn build(&self) -> anyhow::Result<Output> {
-        let mut cmd = basic_secure_docker_command(Duration::from_secs(1200), true, 4.0);
+        let mut cmd = basic_secure_docker_command(Duration::from_secs(1200), false, 4.0);
 
         cmd.arg("--mount");
         cmd.arg(format!(
