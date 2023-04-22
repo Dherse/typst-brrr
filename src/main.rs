@@ -25,6 +25,7 @@ async fn main() -> anyhow::Result<()> {
 
     dbg!(sandbox.clone().await?);
     dbg!(sandbox.fetch().await?);
+    dbg!(sandbox.build().await?);
 
     Ok(())
 }

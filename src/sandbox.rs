@@ -82,7 +82,7 @@ impl Sandbox {
     }
 
     pub async fn clone(&self) -> anyhow::Result<Output> {
-        let mut cmd = basic_secure_docker_command(Duration::from_secs(10), true);
+        let mut cmd = basic_secure_docker_command(Duration::from_secs(10), true, 1.0);
 
         cmd.arg("--env");
         cmd.arg(format!("REPO_URL={}", self.repository));
@@ -106,7 +106,7 @@ impl Sandbox {
     }
 
     pub async fn fetch(&self) -> anyhow::Result<Output> {
-        let mut cmd = basic_secure_docker_command(Duration::from_secs(60), true);
+        let mut cmd = basic_secure_docker_command(Duration::from_secs(60), true, 1.0);
 
         cmd.arg("--mount");
         cmd.arg(format!(
@@ -127,6 +127,31 @@ impl Sandbox {
         match out {
             Some(out) => Ok(out),
             None => bail!("failed to fetch crates"),
+        }
+    }
+
+    pub async fn build(&self) -> anyhow::Result<Output> {
+        let mut cmd = basic_secure_docker_command(Duration::from_secs(1200), true, 4.0);
+
+        cmd.arg("--mount");
+        cmd.arg(format!(
+            "type=bind,source={},target=/typster",
+            self.git.display()
+        ));
+
+        cmd.arg("--mount");
+        cmd.arg(format!(
+            "type=bind,source={},target=/cargo,readonly",
+            self.cargo.display()
+        ));
+
+        cmd.arg("typst/build");
+
+        let out = run_command_with_timout(cmd, Duration::from_secs(1200)).await?;
+
+        match out {
+            Some(out) => Ok(out),
+            None => bail!("failed to build project"),
         }
     }
 }
@@ -234,7 +259,7 @@ async fn run_command_with_timout(
     }))
 }
 
-fn basic_secure_docker_command(timeout: Duration, allow_network: bool) -> Command {
+fn basic_secure_docker_command(timeout: Duration, allow_network: bool, max_cores: f32) -> Command {
     let mut cmd = docker_command!(
         "run",
         "--platform",
@@ -251,8 +276,7 @@ fn basic_secure_docker_command(timeout: Duration, allow_network: bool) -> Comman
         "--memory-swap",
         "640m",
         "--cpus",
-        "1.0",
-        "--rm",
+        format!("{max_cores:.1}"),
         "--env",
         format!("TYPSTER_TIMEOUT={}", timeout.as_secs()),
     );
