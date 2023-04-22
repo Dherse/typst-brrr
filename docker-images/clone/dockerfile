@@ -11,7 +11,7 @@ COPY clone.sh /bin/clone.sh
 RUN chmod +x /bin/clone.sh
 
 # set the working directory
-WORKDIR /data
+WORKDIR /typster
 
 # Run the clone.sh file
 ENTRYPOINT ["/bin/clone.sh"]

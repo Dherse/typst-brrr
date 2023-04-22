@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -eu
+
 hyperfine --runs ${RUNS} \
     --warmup ${WARMUPS} \
     -N \

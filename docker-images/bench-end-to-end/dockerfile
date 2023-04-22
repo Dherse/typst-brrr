@@ -16,7 +16,7 @@ WORKDIR /binary
 WORKDIR /samples
 
 # Set the working directory (where the input files are)
-WORKDIR /data
+WORKDIR /typster
 
 # Set the environment variables
 ENV FILE_LIST=""

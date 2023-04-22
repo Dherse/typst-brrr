@@ -13,7 +13,7 @@ WORKDIR /cargo
 ENV CARGO_HOME=/cargo
 
 # set the working directory
-WORKDIR /data
+WORKDIR /typster
 
 # Run the fetch.sh file
 ENTRYPOINT [ "/bin/fetch.sh" ]
