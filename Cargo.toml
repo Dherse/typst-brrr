@@ -37,11 +37,6 @@ futures-util = "0.3.28"
 # Logging
 tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.16", features = ["env-filter", "parking_lot"] }
-tempfile = "3.5.0"
 
-[build-dependencies]
-# Nicer error handling
-anyhow = "1.0.70"
-
-# TAR ball support
-tar = "0.4.38"
+# Random run-ID generation
+rand = "0.8.5"

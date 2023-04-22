@@ -1,33 +1,78 @@
-use std::{os::unix::prelude::PermissionsExt, time::Duration};
+use std::{
+    os::unix::prelude::PermissionsExt,
+    path::{Path, PathBuf},
+    time::Duration,
+};
 
-use anyhow::{Context, bail};
+use anyhow::{bail, Context};
+use rand::Rng;
 use tokio::process::Command;
 
 pub struct Sandbox {
-    git: tempfile::TempDir,
-    cargo: tempfile::TempDir,
-    results: tempfile::TempDir,
+    id: String,
+    git: PathBuf,
+    cargo: PathBuf,
+    results: PathBuf,
 
     repository: String,
     commit: String,
 }
 
+impl Drop for Sandbox {
+    fn drop(&mut self) {
+        if let Err(e) = std::fs::remove_dir_all(&self.git) {
+            tracing::error!("failed to remove git directory: {}", e);
+        }
+
+        if let Err(e) = std::fs::remove_dir_all(&self.cargo) {
+            tracing::error!("failed to remove cargo directory: {}", e);
+        }
+
+        if let Err(e) = std::fs::remove_dir_all(&self.results) {
+            tracing::error!("failed to remove results directory: {}", e);
+        }
+    }
+}
+
 impl Sandbox {
-    pub fn new<S1: ToString, S2: ToString>(repository: S1, commit: S2) -> anyhow::Result<Self> {
-        let git = tempfile::Builder::new()
-            .prefix("typster-repo")
-            .tempdir()
-            .context("failed to create temporary directory")?;
-        let cargo = tempfile::Builder::new()
-            .prefix("typster-cargo")
-            .tempdir()
-            .context("failed to create temporary directory")?;
-        let results = tempfile::Builder::new()
-            .prefix("typster-results")
-            .tempdir()
-            .context("failed to create temporary directory")?;
+    pub async fn new<P: AsRef<Path>, S1: ToString, S2: ToString>(
+        root: P,
+        repository: S1,
+        commit: S2,
+    ) -> anyhow::Result<Self> {
+        //generate random ID of length 10 using the rand crate
+        let id = rand::thread_rng()
+            .sample_iter(&rand::distributions::Alphanumeric)
+            .take(10)
+            .map(char::from)
+            .collect::<String>();
+
+        let git = root
+            .as_ref()
+            .join(format!("{id}-git"));
+
+        tokio::fs::create_dir_all(&git)
+            .await
+            .context("failed to create git directory")?;
+
+        let cargo = root
+            .as_ref()
+            .join(format!("{id}-cargo"));
+
+        tokio::fs::create_dir_all(&cargo)
+            .await
+            .context("failed to create cargo directory")?;
+
+        let results = root
+            .as_ref()
+            .join(format!("{id}-results"));
+
+        tokio::fs::create_dir_all(&results)
+            .await
+            .context("failed to create results directory")?;
 
         Ok(Self {
+            id,
             git,
             cargo,
             results,
@@ -47,7 +92,7 @@ impl Sandbox {
         cmd.arg("--mount");
         cmd.arg(format!(
             "type=bind,source={},target=/typster",
-            self.git.path().display()
+            self.git.display()
         ));
 
         cmd.arg("typst/clone");
@@ -65,14 +110,14 @@ impl Sandbox {
 
         cmd.arg("--mount");
         cmd.arg(format!(
-            "type=bind,source={},target=/typster",
-            self.git.path().display()
+            "type=bind,source={},target=/typster,readonly",
+            self.git.display()
         ));
 
         cmd.arg("--mount");
         cmd.arg(format!(
             "type=bind,source={},target=/cargo",
-            self.cargo.path().display()
+            self.cargo.display()
         ));
 
         cmd.arg("typst/fetch");
@@ -176,7 +221,10 @@ async fn run_command_with_timout(
         .collect::<Vec<String>>();
 
     let mut rm_cmd = docker_command!("rm", "--force", id);
-    rm_cmd.status().await.context("failed to remove container")?;
+    rm_cmd
+        .status()
+        .await
+        .context("failed to remove container")?;
 
     Ok(Some(Output {
         cmd: format!("{:?}", cmd.as_std()),
@@ -204,6 +252,7 @@ fn basic_secure_docker_command(timeout: Duration, allow_network: bool) -> Comman
         "640m",
         "--cpus",
         "1.0",
+        "--rm",
         "--env",
         format!("TYPSTER_TIMEOUT={}", timeout.as_secs()),
     );

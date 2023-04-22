@@ -1,3 +1,6 @@
+use std::path::PathBuf;
+
+use anyhow::Context;
 use tracing_subscriber::{fmt::SubscriberBuilder, EnvFilter};
 
 pub mod config;
@@ -10,10 +13,15 @@ async fn main() -> anyhow::Result<()> {
         .without_time()
         .init();
 
+    let root_dir = PathBuf::from("./typster");
+    tokio::fs::create_dir_all(&root_dir).await.context("failed to create root directory")?;
+    let root_dir = tokio::fs::canonicalize(root_dir).await.context("failed to canonicalize root directory")?;
+
     let sandbox = sandbox::Sandbox::new(
+        &root_dir,
         "https://github.com/Dherse/typst",
-        "content-rework"
-    )?;
+        "content-rework",
+    ).await?;
 
     dbg!(sandbox.clone().await?);
     dbg!(sandbox.fetch().await?);
