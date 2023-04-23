@@ -4,6 +4,7 @@ use anyhow::Context;
 use tracing_subscriber::{fmt::SubscriberBuilder, EnvFilter};
 
 pub mod config;
+pub mod profile;
 pub mod sandbox;
 
 #[tokio::main]
@@ -13,22 +14,33 @@ async fn main() -> anyhow::Result<()> {
         .without_time()
         .init();
 
-    let root_dir = PathBuf::from("./typster");
-    tokio::fs::create_dir_all(&root_dir).await.context("failed to create root directory")?;
-    let root_dir = tokio::fs::canonicalize(root_dir).await.context("failed to canonicalize root directory")?;
+    let profile = profile::Profile::load("./typster.toml").await?;
 
-    let samples = tokio::fs::canonicalize("./samples").await.context("failed to canonicalize samples directory")?;
+    let root_dir = PathBuf::from("./typster");
+    tokio::fs::create_dir_all(&root_dir)
+        .await
+        .context("failed to create root directory")?;
+
+    let root_dir = tokio::fs::canonicalize(root_dir)
+        .await
+        .context("failed to canonicalize root directory")?;
+
+    let samples = tokio::fs::canonicalize("./samples")
+        .await
+        .context("failed to canonicalize samples directory")?;
 
     let sandbox = sandbox::Sandbox::new(
+        &profile,
         &root_dir,
         "https://github.com/Dherse/typst",
-        "content-rework",
-    ).await?;
+        "instrumentation",
+    )
+    .await?;
 
-    dbg!(sandbox.clone().await?);
-    dbg!(sandbox.fetch().await?);
-    dbg!(sandbox.build().await?);
-    dbg!(sandbox.bench_e2e(&samples).await?);
+    dbg!(sandbox.clone(&profile).await?);
+    dbg!(sandbox.fetch(&profile).await?);
+    dbg!(sandbox.build(&profile).await?);
+    dbg!(sandbox.bench_e2e(&profile, &samples).await?);
 
     Ok(())
 }

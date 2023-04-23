@@ -8,8 +8,12 @@ use anyhow::{bail, Context};
 use rand::Rng;
 use tokio::process::Command;
 
+use crate::profile::{Profile, Stage};
+
 pub struct Sandbox {
     id: String,
+    delete_on_exit: bool,
+
     git: PathBuf,
     cargo: PathBuf,
     results: PathBuf,
@@ -20,36 +24,37 @@ pub struct Sandbox {
 
 impl Drop for Sandbox {
     fn drop(&mut self) {
-        if let Err(e) = std::fs::remove_dir_all(&self.git) {
-            tracing::error!("failed to remove git directory: {}", e);
-        }
-
-        if let Err(e) = std::fs::remove_dir_all(&self.cargo) {
-            tracing::error!("failed to remove cargo directory: {}", e);
-        }
-
-        if let Err(e) = std::fs::remove_dir_all(&self.results) {
-            tracing::error!("failed to remove results directory: {}", e);
+        if self.delete_on_exit {
+            if let Err(e) = std::fs::remove_dir_all(&self.git) {
+                tracing::error!("failed to remove git directory: {}", e);
+            }
+    
+            if let Err(e) = std::fs::remove_dir_all(&self.cargo) {
+                tracing::error!("failed to remove cargo directory: {}", e);
+            }
+    
+            if let Err(e) = std::fs::remove_dir_all(&self.results) {
+                tracing::error!("failed to remove results directory: {}", e);
+            }
         }
     }
 }
 
 impl Sandbox {
     pub async fn new<P: AsRef<Path>, S1: ToString, S2: ToString>(
+        profile: &Profile,
         root: P,
         repository: S1,
         commit: S2,
     ) -> anyhow::Result<Self> {
         //generate random ID of length 10 using the rand crate
-        let id = rand::thread_rng()
+        let id = /*rand::thread_rng()
             .sample_iter(&rand::distributions::Alphanumeric)
             .take(10)
             .map(char::from)
-            .collect::<String>();
+            .collect::<String>()*/ "2fcQhM9muA".to_string();
 
-        let git = root
-            .as_ref()
-            .join(format!("{id}-git"));
+        let git = root.as_ref().join(format!("{id}-git"));
 
         tokio::fs::create_dir_all(&git)
             .await
@@ -59,9 +64,7 @@ impl Sandbox {
             .await
             .context("failed to set permissions on git directory")?;
 
-        let cargo = root
-            .as_ref()
-            .join(format!("{id}-cargo"));
+        let cargo = root.as_ref().join(format!("{id}-cargo"));
 
         tokio::fs::create_dir_all(&cargo)
             .await
@@ -71,9 +74,7 @@ impl Sandbox {
             .await
             .context("failed to set permissions on cargo directory")?;
 
-        let results = root
-            .as_ref()
-            .join(format!("{id}-results"));
+        let results = root.as_ref().join(format!("{id}-results"));
 
         tokio::fs::create_dir_all(&results)
             .await
@@ -85,6 +86,7 @@ impl Sandbox {
 
         Ok(Self {
             id,
+            delete_on_exit: profile.delete_on_exit,
             git,
             cargo,
             results,
@@ -124,8 +126,12 @@ impl Sandbox {
     }
 
     /// Clones the repository into the git directory
-    pub async fn clone(&self) -> anyhow::Result<Output> {
-        let mut cmd = basic_secure_docker_command(Duration::from_secs(10), true, 1.0);
+    pub async fn clone(&self, profile: &Profile) -> anyhow::Result<Output> {
+        let stage = profile
+            .stages
+            .get("clone")
+            .context("no clone stage in profile")?;
+        let mut cmd = basic_secure_docker_command(stage);
 
         cmd.arg("--env");
         cmd.arg(format!("REPO_URL={}", self.repository));
@@ -140,7 +146,7 @@ impl Sandbox {
 
         cmd.arg("typst/clone");
 
-        let out = run_command_with_timout(cmd, Duration::from_secs(30)).await?;
+        let out = run_command_with_timout(cmd, stage.hard_timeout.into()).await?;
 
         match out {
             Some(out) => Ok(out),
@@ -149,8 +155,12 @@ impl Sandbox {
     }
 
     /// Fetches the crates into the cargo directory
-    pub async fn fetch(&self) -> anyhow::Result<Output> {
-        let mut cmd = basic_secure_docker_command(Duration::from_secs(60), true, 1.0);
+    pub async fn fetch(&self, profile: &Profile) -> anyhow::Result<Output> {
+        let stage = profile
+            .stages
+            .get("fetch")
+            .context("no fetch stage in profile")?;
+        let mut cmd = basic_secure_docker_command(stage);
 
         cmd.arg("--mount");
         cmd.arg(format!(
@@ -166,7 +176,7 @@ impl Sandbox {
 
         cmd.arg("typst/fetch");
 
-        let out = run_command_with_timout(cmd, Duration::from_secs(120)).await?;
+        let out = run_command_with_timout(cmd, stage.hard_timeout.into()).await?;
 
         match out {
             Some(out) => Ok(out),
@@ -175,8 +185,12 @@ impl Sandbox {
     }
 
     /// Builds the project
-    pub async fn build(&self) -> anyhow::Result<Output> {
-        let mut cmd = basic_secure_docker_command(Duration::from_secs(1200), false, 4.0);
+    pub async fn build(&self, profile: &Profile) -> anyhow::Result<Output> {
+        let stage = profile
+            .stages
+            .get("build")
+            .context("no build stage in profile")?;
+        let mut cmd = basic_secure_docker_command(stage);
 
         cmd.arg("--mount");
         cmd.arg(format!(
@@ -192,7 +206,7 @@ impl Sandbox {
 
         cmd.arg("typst/build");
 
-        let out = run_command_with_timout(cmd, Duration::from_secs(1200)).await?;
+        let out = run_command_with_timout(cmd, stage.hard_timeout.into()).await?;
 
         match out {
             Some(out) => Ok(out),
@@ -201,8 +215,16 @@ impl Sandbox {
     }
 
     /// Runs the benchmarks
-    pub async fn bench_e2e<P: AsRef<Path>>(&self, samples: P) -> anyhow::Result<Output> {
-        let mut cmd = basic_secure_docker_command(Duration::from_secs(12000), false, 1.1);
+    pub async fn bench_e2e<P: AsRef<Path>>(
+        &self,
+        profile: &Profile,
+        samples: P,
+    ) -> anyhow::Result<Output> {
+        let stage = profile
+            .stages
+            .get("bench_e2e")
+            .context("no build stage in profile")?;
+        let mut cmd = basic_secure_docker_command(&stage);
 
         cmd.arg("--mount");
         cmd.arg(format!(
@@ -223,17 +245,25 @@ impl Sandbox {
         ));
 
         cmd.arg("--env");
-        cmd.arg("FILE_LIST=/samples/conformal_prediction/conformal_prediction.typ,/samples/mandelbrot/mandelbrot.typ");
+        cmd.arg(format!(
+            "FILE_LIST={}",
+            profile
+                .samples
+                .values()
+                .map(|p| p.display().to_string())
+                .collect::<Vec<_>>()
+                .join(",")
+        ));
 
         cmd.arg("--env");
         cmd.arg("WARMUPS=10");
 
         cmd.arg("--env");
-        cmd.arg("RUNS=200");
+        cmd.arg("RUNS=30");
 
         cmd.arg("typst/bench-end-to-end");
 
-        let out = run_command_with_timout(cmd, Duration::from_secs(12000)).await?;
+        let out = run_command_with_timout(cmd, stage.hard_timeout.into()).await?;
 
         match out {
             Some(out) => Ok(out),
@@ -340,7 +370,7 @@ async fn run_command_with_timout(
     }))
 }
 
-fn basic_secure_docker_command(timeout: Duration, allow_network: bool, max_cores: f32) -> Command {
+fn basic_secure_docker_command(stage: &Stage) -> Command {
     let mut cmd = docker_command!(
         "run",
         "--platform",
@@ -353,16 +383,19 @@ fn basic_secure_docker_command(timeout: Duration, allow_network: bool, max_cores
         "--workdir",
         "/typster",
         "--memory",
-        "2048m",
+        format!("{}", stage.memory_limit),
         "--memory-swap",
-        "4096m",
+        format!("{}", stage.swap_limit),
         "--cpus",
-        format!("{max_cores:.1}"),
+        format!("{:.1}", stage.cpu_limit),
         "--env",
-        format!("TYPSTER_TIMEOUT={}", timeout.as_secs()),
+        format!(
+            "TYPSTER_TIMEOUT={}",
+            <_ as Into<Duration>>::into(stage.soft_timeout).as_secs()
+        ),
     );
 
-    if !allow_network {
+    if !stage.networking {
         cmd.arg("--network");
         cmd.arg("none");
     } else {

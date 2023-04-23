@@ -7,6 +7,9 @@ edition = "2021"
 # Serialization support
 serde = { version = "1.0", features = ["derive"] }
 
+# TOML support
+toml = "0.7.3"
+
 # JSON support
 serde_json = "1.0"
 
@@ -40,3 +43,4 @@ tracing-subscriber = { version = "0.3.16", features = ["env-filter", "parking_lo
 
 # Random run-ID generation
 rand = "0.8.5"
+duration-string = { version = "0.3.0", features = ["serde"] }

@@ -1,0 +1,44 @@
+delete_on_exit = false
+
+[profiles.main]
+samples = 2000
+
+[profiles.other]
+samples = 200
+
+[samples]
+conformal_prediction = "/samples/conformal_prediction/conformal_prediction.typ"
+mandelbrot = "/samples/mandelbrot/mandelbrot.typ"
+steno-numbers = "/samples/steno-numbers/jeff-numbers.typ"
+
+[stages.clone]
+soft_timeout = "120s"
+hard_timeout = "180s"
+memory_limit = "512m"
+swap_limit   = "768m"
+cpu_limit    = 1.0
+networking   = true
+
+[stages.fetch]
+soft_timeout = "120s"
+hard_timeout = "180s"
+memory_limit = "512m"
+swap_limit   = "768m"
+cpu_limit    = 1.0
+networking   = true
+
+[stages.build]
+soft_timeout = "20m"
+hard_timeout = "22m"
+memory_limit = "3.5g"
+swap_limit   = "4g"
+cpu_limit    = 4.0
+networking   = false
+
+[stages.bench_e2e]
+soft_timeout = "12h"
+hard_timeout = "12h"
+memory_limit = "2g"
+swap_limit   = "2.5g"
+cpu_limit    = 2.0
+networking   = false
