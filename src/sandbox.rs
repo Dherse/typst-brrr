@@ -28,9 +28,9 @@ impl Drop for Sandbox {
             tracing::error!("failed to remove cargo directory: {}", e);
         }
 
-        /*if let Err(e) = std::fs::remove_dir_all(&self.results) {
+        if let Err(e) = std::fs::remove_dir_all(&self.results) {
             tracing::error!("failed to remove results directory: {}", e);
-        }*/
+        }
     }
 }
 
@@ -41,11 +41,11 @@ impl Sandbox {
         commit: S2,
     ) -> anyhow::Result<Self> {
         //generate random ID of length 10 using the rand crate
-        let id = /*rand::thread_rng()
+        let id = rand::thread_rng()
             .sample_iter(&rand::distributions::Alphanumeric)
             .take(10)
             .map(char::from)
-            .collect::<String>()*/ "2fcQhM9muA".to_string();
+            .collect::<String>();
 
         let git = root
             .as_ref()
@@ -55,6 +55,10 @@ impl Sandbox {
             .await
             .context("failed to create git directory")?;
 
+        tokio::fs::set_permissions(&git, wide_open_permissions())
+            .await
+            .context("failed to set permissions on git directory")?;
+
         let cargo = root
             .as_ref()
             .join(format!("{id}-cargo"));
@@ -63,6 +67,10 @@ impl Sandbox {
             .await
             .context("failed to create cargo directory")?;
 
+        tokio::fs::set_permissions(&cargo, wide_open_permissions())
+            .await
+            .context("failed to set permissions on cargo directory")?;
+
         let results = root
             .as_ref()
             .join(format!("{id}-results"));
@@ -70,6 +78,10 @@ impl Sandbox {
         tokio::fs::create_dir_all(&results)
             .await
             .context("failed to create results directory")?;
+
+        tokio::fs::set_permissions(&results, wide_open_permissions())
+            .await
+            .context("failed to set permissions on results directory")?;
 
         Ok(Self {
             id,
@@ -81,6 +93,37 @@ impl Sandbox {
         })
     }
 
+    /// Returns the ID of the sandbox
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
+    /// Returns the path to the results directory
+    pub fn results(&self) -> &Path {
+        &self.results
+    }
+
+    /// Returns the path to the cargo directory
+    pub fn cargo(&self) -> &Path {
+        &self.cargo
+    }
+
+    /// Returns the path to the git directory
+    pub fn git(&self) -> &Path {
+        &self.git
+    }
+
+    /// Returns the repository URL
+    pub fn repo(&self) -> &str {
+        &self.repository
+    }
+
+    /// Returns the commit hash
+    pub fn commit(&self) -> &str {
+        &self.commit
+    }
+
+    /// Clones the repository into the git directory
     pub async fn clone(&self) -> anyhow::Result<Output> {
         let mut cmd = basic_secure_docker_command(Duration::from_secs(10), true, 1.0);
 
@@ -105,6 +148,7 @@ impl Sandbox {
         }
     }
 
+    /// Fetches the crates into the cargo directory
     pub async fn fetch(&self) -> anyhow::Result<Output> {
         let mut cmd = basic_secure_docker_command(Duration::from_secs(60), true, 1.0);
 
@@ -130,6 +174,7 @@ impl Sandbox {
         }
     }
 
+    /// Builds the project
     pub async fn build(&self) -> anyhow::Result<Output> {
         let mut cmd = basic_secure_docker_command(Duration::from_secs(1200), false, 4.0);
 
@@ -155,6 +200,7 @@ impl Sandbox {
         }
     }
 
+    /// Runs the benchmarks
     pub async fn bench_e2e<P: AsRef<Path>>(&self, samples: P) -> anyhow::Result<Output> {
         let mut cmd = basic_secure_docker_command(Duration::from_secs(12000), false, 1.1);
 
@@ -177,7 +223,7 @@ impl Sandbox {
         ));
 
         cmd.arg("--env");
-        cmd.arg("FILE_LIST=/samples/conformal_prediction/conformal_prediction.typ");
+        cmd.arg("FILE_LIST=/samples/conformal_prediction/conformal_prediction.typ,/samples/mandelbrot/mandelbrot.typ");
 
         cmd.arg("--env");
         cmd.arg("WARMUPS=10");
@@ -194,11 +240,6 @@ impl Sandbox {
             None => bail!("failed to build project"),
         }
     }
-}
-
-pub struct CloneOutput {
-    stdout: Vec<String>,
-    stderr: Vec<String>,
 }
 
 // We must create a world-writable files (rustfmt) and directories
