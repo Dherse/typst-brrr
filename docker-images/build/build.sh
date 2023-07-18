@@ -2,4 +2,4 @@
 
 set -eu
 
-cargo build --release -p typst-cli
+timeout ${TIMEOUT} cargo build --release -p typst-cli

@@ -1,4 +1,4 @@
-FROM alpine:3.17.3
+FROM alpine:3.18
 
 # Get git
 RUN apk add --no-cache git
@@ -9,6 +9,16 @@ COPY clone.sh /bin/clone.sh
 
 # Make the clone.sh file executable
 RUN chmod +x /bin/clone.sh
+
+# Create user as non-root
+RUN addgroup --g 1000 groupcontainer
+RUN adduser -u 1000 -G groupcontainer -h /home/containeruser -D containeruser
+ 
+# Set the user to use when running this image
+USER containeruser
+
+# Set env for timeout
+ENV TIMEOUT=100
 
 # set the working directory
 WORKDIR /typster

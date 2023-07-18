@@ -1,4 +1,4 @@
-FROM rust:1.68.2-alpine3.17
+FROM rust:1.71-alpine3.18
 
 # Copy the fetch.sh file into the container
 COPY fetch.sh /bin/fetch.sh
@@ -6,11 +6,21 @@ COPY fetch.sh /bin/fetch.sh
 # Make the fetch.sh file executable
 RUN chmod +x /bin/fetch.sh
 
+# Create user as non-root
+RUN addgroup --g 1000 groupcontainer
+RUN adduser -u 1000 -G groupcontainer -h /home/containeruser -D containeruser
+ 
+# Set the user to use when running this image
+USER containeruser
+
 # set the working directory
 WORKDIR /cargo
 
 # Set the home for cargo
 ENV CARGO_HOME=/cargo
+
+# Set env for timeout
+ENV TIMEOUT=100
 
 # set the working directory
 WORKDIR /typster

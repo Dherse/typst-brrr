@@ -1,0 +1,58 @@
+<mxfile host="Electron" modified="2023-06-23T17:17:41.525Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.4.0 Chrome/112.0.5615.204 Electron/24.5.1 Safari/537.36" etag="jiMJ8BVJkpKFOADdMV3q" version="21.4.0" type="device">
+  <diagram name="Page-1" id="z6hT24lAIQ1Qt2mDOS5c">
+    <mxGraphModel dx="1220" dy="708" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="TC1mq8rxLbuKtGXRgA2w-2" value="Circuit" style="shape=trapezoid;perimeter=trapezoidPerimeter;whiteSpace=wrap;html=1;fixedSize=1;fontFamily=UGent Panno Text;fontSize=22;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="240" y="220" width="200" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="TC1mq8rxLbuKtGXRgA2w-5" value="Physical level" style="shape=trapezoid;perimeter=trapezoidPerimeter;whiteSpace=wrap;html=1;fixedSize=1;fontFamily=UGent Panno Text;fontSize=22;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="220" y="250" width="240" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="TC1mq8rxLbuKtGXRgA2w-6" value="System" style="shape=trapezoid;perimeter=trapezoidPerimeter;whiteSpace=wrap;html=1;fixedSize=1;fontFamily=UGent Panno Text;fontSize=22;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="260" y="190" width="160" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="TC1mq8rxLbuKtGXRgA2w-7" value="Function" style="shape=trapezoid;perimeter=trapezoidPerimeter;whiteSpace=wrap;html=1;fixedSize=1;fontFamily=UGent Panno Text;fontSize=22;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="280" y="160" width="120" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="TC1mq8rxLbuKtGXRgA2w-8" value="&lt;br&gt;Idea" style="triangle;whiteSpace=wrap;html=1;rotation=0;fontFamily=UGent Panno Text;fontSize=22;flipV=1;flipH=0;direction=south;labelPosition=center;verticalLabelPosition=middle;align=center;verticalAlign=middle;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="300" y="100" width="80" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="TC1mq8rxLbuKtGXRgA2w-20" value="" style="group;flipH=1;" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="90" y="130" width="120" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="TC1mq8rxLbuKtGXRgA2w-9" value="" style="shape=curlyBracket;whiteSpace=wrap;html=1;rounded=1;flipH=0;labelPosition=right;verticalLabelPosition=middle;align=left;verticalAlign=middle;" vertex="1" parent="TC1mq8rxLbuKtGXRgA2w-20">
+          <mxGeometry x="100" y="90" width="20" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="TC1mq8rxLbuKtGXRgA2w-10" value="" style="shape=curlyBracket;whiteSpace=wrap;html=1;rounded=1;flipH=0;labelPosition=right;verticalLabelPosition=middle;align=left;verticalAlign=middle;" vertex="1" parent="TC1mq8rxLbuKtGXRgA2w-20">
+          <mxGeometry x="100" width="20" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="TC1mq8rxLbuKtGXRgA2w-11" value="You are here" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=UGent Panno Text;fontSize=22;" vertex="1" parent="TC1mq8rxLbuKtGXRgA2w-20">
+          <mxGeometry y="105" width="100" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="TC1mq8rxLbuKtGXRgA2w-12" value="We want to get here" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=UGent Panno Text;fontSize=22;" vertex="1" parent="TC1mq8rxLbuKtGXRgA2w-20">
+          <mxGeometry y="15" width="100" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="TC1mq8rxLbuKtGXRgA2w-21" value="" style="shape=curlyBracket;whiteSpace=wrap;html=1;rounded=1;flipH=1;labelPosition=right;verticalLabelPosition=middle;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="470" y="250" width="20" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="TC1mq8rxLbuKtGXRgA2w-22" value="" style="shape=curlyBracket;whiteSpace=wrap;html=1;rounded=1;flipH=1;labelPosition=right;verticalLabelPosition=middle;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="470" y="190" width="20" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="TC1mq8rxLbuKtGXRgA2w-23" value="" style="shape=curlyBracket;whiteSpace=wrap;html=1;rounded=1;flipH=1;labelPosition=right;verticalLabelPosition=middle;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="470" y="160" width="20" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="TC1mq8rxLbuKtGXRgA2w-24" value="Simple" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=UGent Panno Text;fontSize=22;" vertex="1" parent="1">
+          <mxGeometry x="490" y="160" width="100" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="TC1mq8rxLbuKtGXRgA2w-25" value="Difficult" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=UGent Panno Text;fontSize=22;" vertex="1" parent="1">
+          <mxGeometry x="490" y="205" width="100" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="TC1mq8rxLbuKtGXRgA2w-26" value="Very hard" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=UGent Panno Text;fontSize=22;" vertex="1" parent="1">
+          <mxGeometry x="490" y="250" width="100" height="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -12,13 +12,13 @@ git config --global init.defaultBranch main
 cd /typster
 
 # Initialize the repository
-git init
+git init || true
 
 # Add the remote origin
-git remote add origin $REPO_URL
+timeout ${TIMEOUT} git remote add origin $REPO_URL || true
 
 # Fetch the commit
-git fetch --depth 1 origin $COMMIT
+timeout ${TIMEOUT} git fetch --depth 1 origin $COMMIT || true
 
 # Checkout
-git checkout $COMMIT
+timeout ${TIMEOUT} git checkout $COMMIT

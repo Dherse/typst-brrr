@@ -1,46 +1,5 @@
-[package]
-name = "typst-brrr"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-# Serialization support
-serde = { version = "1.0", features = ["derive"] }
-
-# TOML support
-toml = "0.7.3"
-
-# JSON support
-serde_json = "1.0"
-
-# Runtime
-tokio = { version = "1.0", features = [ "fs", "rt", "rt-multi-thread", "parking_lot", "macros", "net", "io-util", "io-std", "process" ] }
-
-# Modular components for building robust networking applications
-tower = { version = "0.4.13", features = [ "spawn-ready", "limit", "load", "retry", "reconnect" ] }
-
-# Fast HTTP server
-warp = {version = "0.3.4", features = [ "tls" ] }
-
-# GitHub API
-octocrab = "0.20.0"
-
-# Nicer error handling
-anyhow = "1.0.70"
-
-# Command line arguments
-clap = { version = "4.2.4", features = ["derive", "env"] }
-
-# Git support
-git2 = "0.17.1"
-
-# Stream utils
-futures-util = "0.3.28"
-
-# Logging
-tracing = "0.1.37"
-tracing-subscriber = { version = "0.3.16", features = ["env-filter", "parking_lot"] }
-
-# Random run-ID generation
-rand = "0.8.5"
-duration-string = { version = "0.3.0", features = ["serde"] }
+[workspace]
+members = [
+    "proto",
+    "runner",
+]

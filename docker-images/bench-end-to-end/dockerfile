@@ -1,7 +1,4 @@
-FROM rust:1.68.2-alpine3.17
-
-# Add the hyperfine benchmark runner
-RUN apk add hyperfine
+FROM alpine:3.18
 
 # Copy the bench.sh file into the container
 COPY bench.sh /bin/bench.sh
@@ -11,9 +8,19 @@ COPY cobench /bin/cobench
 RUN chmod +x /bin/bench.sh
 RUN chmod +x /bin/cobench
 
+# Create user as non-root
+RUN addgroup --g 1000 groupcontainer
+RUN adduser -u 1000 -G groupcontainer -h /home/containeruser -D containeruser
+ 
+# Set the user to use when running this image
+USER containeruser
+
 WORKDIR /typster
 WORKDIR /samples
 WORKDIR /data
+
+# Set env for timeout
+ENV TIMEOUT=1000
 
 # Set the environment variables
 ENV FILE_LIST=""

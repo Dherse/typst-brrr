@@ -1,0 +1,27 @@
+FROM alpine:3.18
+
+# Copy the bench.sh file into the container
+COPY profile.sh /bin/profile.sh
+
+# Make the walltime.sh file executable
+RUN chmod +x /bin/profile.sh
+# Create user as non-root
+RUN addgroup --g 1000 groupcontainer
+RUN adduser -u 1000 -G groupcontainer -h /home/containeruser -D containeruser
+ 
+# Set the user to use when running this image
+USER containeruser
+
+WORKDIR /typster
+WORKDIR /samples
+WORKDIR /data
+WORKDIR /pgo-data
+
+# Set env for timeout
+ENV TIMEOUT=1000
+
+# Set the environment variables
+ENV FILE_LIST=""
+
+# Run the walltime.sh file
+ENTRYPOINT [ "/bin/profile.sh" ]

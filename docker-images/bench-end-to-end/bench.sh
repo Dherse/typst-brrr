@@ -3,9 +3,14 @@
 set -eu
 
 IFS=','; for file in ${FILE_LIST} ; do
-    /bin/cobench \
+    timeout ${TIMEOUT} /bin/cobench \
+        measure \
         -n ${RUNS} \
         -w ${WARMUPS} \
-        --export-json /data/$(basename $file .typ).json \
-        "/typster/target/release/typst --font-path $(dirname $file) compile ${file} /dev/null"
+        --procinfo \
+        -f ${FREQUENCY} \
+        -S ${WORK} \
+        -s ${SLEEP} \
+        --export-path /data/$(basename $file .typ).json \
+        "/typster/target/release/typst compile --font-path $(dirname $file) ${file} /dev/null"
 done

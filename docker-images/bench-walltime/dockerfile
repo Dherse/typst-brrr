@@ -1,0 +1,31 @@
+FROM alpine:3.18
+
+# Copy the bench.sh file into the container
+COPY walltime.sh /bin/walltime.sh
+COPY cobench /bin/cobench
+
+# Make the walltime.sh file executable
+RUN chmod +x /bin/walltime.sh
+RUN chmod +x /bin/cobench
+
+# Create user as non-root
+RUN addgroup --g 1000 groupcontainer
+RUN adduser -u 1000 -G groupcontainer -h /home/containeruser -D containeruser
+ 
+# Set the user to use when running this image
+USER containeruser
+
+WORKDIR /typster
+WORKDIR /samples
+WORKDIR /data
+
+# Set env for timeout
+ENV TIMEOUT=1000
+
+# Set the environment variables
+ENV FILE_LIST=""
+ENV WARMUP=3
+ENV RUNS=30
+
+# Run the walltime.sh file
+ENTRYPOINT [ "/bin/walltime.sh" ]

@@ -2,4 +2,4 @@
 
 set -eu
 
-cargo fetch
+timeout ${TIMEOUT} cargo fetch

@@ -1,17 +1,30 @@
 delete_on_exit = false
-
-[profiles.main]
-samples = 2000
-
-[profiles.other]
-samples = 200
+workdir = "../typster"
 
 [samples]
-conformal_prediction = "/samples/conformal_prediction/conformal_prediction.typ"
-mandelbrot = "/samples/mandelbrot/mandelbrot.typ"
-steno-numbers = "/samples/steno-numbers/jeff-numbers.typ"
+root = "./samples"
+files = [
+    #"conformal_prediction/conformal_prediction.typ",
+    "masterproef/main.typ",
+    #"mandelbrot/mandelbrot.typ",
+]
+
+[profiles.main]
+runs = 2000
+warmups = 50
+interval = "100us"
+work = 1000
+sleep = "20ms"
+
+[profiles.other]
+runs = 50
+warmups = 5
+interval = "100us"
+work = 1000
+sleep = "20ms"
 
 [stages.clone]
+image = "typst/clone"
 soft_timeout = "120s"
 hard_timeout = "180s"
 memory_limit = "512m"
@@ -20,25 +33,68 @@ cpu_limit    = 1.0
 networking   = true
 
 [stages.fetch]
-soft_timeout = "120s"
-hard_timeout = "180s"
+image = "typst/fetch"
+soft_timeout = "400s"
+hard_timeout = "420s"
 memory_limit = "512m"
 swap_limit   = "768m"
 cpu_limit    = 1.0
 networking   = true
 
 [stages.build]
+image = "typst/build"
 soft_timeout = "20m"
 hard_timeout = "22m"
-memory_limit = "3.5g"
-swap_limit   = "4g"
-cpu_limit    = 4.0
+memory_limit = "15.5g"
+swap_limit   = "16g"
+cpu_limit    = 16.0
 networking   = false
 
 [stages.bench_e2e]
-soft_timeout = "12h"
-hard_timeout = "12h"
+image = "typst/bench-end-to-end"
+soft_timeout = "6000m"
+hard_timeout = "6500m"
+memory_limit = "8g"
+swap_limit   = "8.5g"
+cpu_limit    = 2.0
+networking   = false
+cpu_cores    = "1,2"
+
+[stages.bench_walltime]
+image = "typst/bench-walltime"
+soft_timeout = "60m"
+hard_timeout = "65m"
+memory_limit = "2g"
+swap_limit   = "2.5g"
+cpu_limit    = 1.0
+networking   = false
+cpu_cores    = "3"
+
+[stages.pgo_build_profile]
+image = "typst/pgo-build-profile"
+soft_timeout = "20m"
+hard_timeout = "22m"
+memory_limit = "15.5g"
+swap_limit   = "16g"
+cpu_limit    = 16.0
+networking   = false
+
+[stages.pgo_profile]
+image = "typst/pgo-profile"
+soft_timeout = "60m"
+hard_timeout = "65m"
 memory_limit = "2g"
 swap_limit   = "2.5g"
 cpu_limit    = 2.0
 networking   = false
+cpu_cores    = "1,2"
+
+[stages.pgo_build]
+image = "typst/pgo-build"
+soft_timeout = "20m"
+hard_timeout = "22m"
+memory_limit = "15.5g"
+swap_limit   = "16g"
+cpu_limit    = 16.0
+networking   = false
+

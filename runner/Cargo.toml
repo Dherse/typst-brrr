@@ -1,0 +1,54 @@
+[package]
+name = "typster-runner"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "runner"
+path = "src/main.rs"
+
+[dependencies]
+# Serialization support
+serde = { version = "1.0", features = ["derive"] }
+
+# TOML support
+toml = "0.7.3"
+serde_json = "1.0"
+
+# Runtime
+tokio = { version = "1.0", features = [ "fs", "rt", "rt-multi-thread", "parking_lot", "macros", "net", "io-util", "io-std", "process" ] }
+
+# Nicer error handling
+anyhow = "1.0.70"
+
+# Command line arguments
+clap = { version = "4.2.4", features = ["derive", "env"] }
+
+# Stream utils
+futures-util = "0.3.28"
+
+# Logging
+tracing = "0.1.37"
+tracing-subscriber = { version = "0.3.16", features = ["env-filter", "parking_lot"] }
+
+# Random run-ID generation
+rand = "0.8.5"
+
+# Duration parsing
+duration-string = { version = "0.3.0", features = ["serde"] }
+
+# Docker API
+bollard = "0.14.0"
+
+# Display of binary sizes
+bytesize = { version = "1.2.0", features = ["serde"] }
+
+# RabbitMQ client
+lapin = "2.1.1"
+
+# RabbbitMQ messages
+typster-proto = { version = "0.1.0", path = "../proto" }
+
+# Executor trait for lapin
+tokio-executor-trait = "2.1.1"
+tokio-reactor-trait = "1.1.0"
