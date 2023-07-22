@@ -1,4 +1,4 @@
-#let wordColor = black
+#let wordColor = black
 #let wordSize = 1.1em
 
 #let explainColor = black

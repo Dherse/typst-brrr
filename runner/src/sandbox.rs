@@ -15,7 +15,7 @@ use bollard::{
 };
 use futures_util::StreamExt;
 use rand::Rng;
-use tokio::{time::timeout, fs::create_dir};
+use tokio::time::timeout;
 
 use crate::profile::{Profile, Samples, Stage};
 
@@ -29,6 +29,7 @@ pub struct Sandbox {
     pub results: PathBuf,
     pub walltimes: PathBuf,
     pub pgo_data: PathBuf,
+    pub pgo_results: PathBuf,
 
     pub repository: String,
     pub commit: String,
@@ -57,6 +58,10 @@ impl Drop for Sandbox {
 
             if let Err(e) = std::fs::remove_dir_all(&self.pgo_data) {
                 tracing::error!("failed to remove pgo-data directory: {}", e);
+            }
+
+            if let Err(e) = std::fs::remove_dir_all(&self.pgo_results) {
+                tracing::error!("failed to remove pgo-results directory: {}", e);
             }
         }
     }
@@ -99,6 +104,7 @@ impl Sandbox {
         let results = create_directory(&parent, "results").await?;
         let walltimes = create_directory(&parent, "walltimes").await?;
         let pgo_data = create_directory(&parent, "pgo-data").await?;
+        let pgo_results = create_directory(&parent, "pgo-results").await?;
 
         Ok(Self {
             id,
@@ -109,6 +115,7 @@ impl Sandbox {
             results,
             walltimes,
             pgo_data,
+            pgo_results,
             repository: repository.to_string(),
             commit: commit.to_string(),
             pipe: cfg!(debug_assertions),
@@ -260,6 +267,7 @@ impl Sandbox {
         docker: &Docker,
         samples: &Samples,
         main: bool,
+        pgo: bool,
     ) -> anyhow::Result<ContainerOutput> {
         let stage = &profile.stages.bench_e2e;
 
@@ -306,7 +314,7 @@ impl Sandbox {
                 },
                 Mount {
                     target: "/data".into(),
-                    source: self.results.clone(),
+                    source: if pgo { self.pgo_results.clone() } else { self.results.clone() },
                     read_only: false,
                 },
             ],
@@ -440,7 +448,7 @@ impl Sandbox {
 
         let env_samples = format!(
             "FILE_LIST={}",
-            samples.to_env().context("no samples found")?
+            samples.to_training_env().context("no samples found")?
         );
         let container = create_safe_container(
             docker,
@@ -678,11 +686,11 @@ async fn create_safe_container(
     mut env: Vec<&str>,
     mounts: Vec<Mount>,
 ) -> anyhow::Result<Container> {
-    if stage.networking {
+    /*if stage.networking {
         env.push("HTTP_PROXY=http://172.19.0.2:3128");
         env.push("HTTPS_PROXY=http://172.19.0.2:3128");
         env.push("FTP_PROXY=http://172.19.0.2:3128");
-    }
+    }*/
 
     let mut env = env.clone();
 
@@ -733,7 +741,7 @@ async fn create_safe_container(
             pids_limit: Some(512),
             network_mode: Some(
                 if stage.networking {
-                    "typst-internal"
+                    "bridge" // "typst-internal"
                 } else {
                     "none"
                 }

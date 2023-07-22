@@ -3,6 +3,23 @@ workdir = "../typster"
 
 [samples]
 root = "./samples"
+training = [
+    "CeTZ/main.typ",
+    "conformal_prediction/conformal_prediction.typ",
+    #"masterproef/main.typ",
+    "mandelbrot/mandelbrot.typ",
+    "short-paper_01/main.typ",
+    "steno-numbers/jeff-numbers.typ",
+    "syntree/main.typ",
+    "tablex/main.typ",
+    "moderncv/example.typ",
+    "typst-ansi_render/demo.typ",
+    "templates/ams/main.typ",
+    "templates/dept-news/main.typ",
+    "templates/fiction/main.typ",
+    "templates/ieee/main.typ",
+    "templates/letter/main.typ",
+]
 files = [
     #"conformal_prediction/conformal_prediction.typ",
     "masterproef/main.typ",
@@ -17,11 +34,11 @@ work = 1000
 sleep = "20ms"
 
 [profiles.other]
-runs = 50
-warmups = 5
-interval = "100us"
-work = 1000
-sleep = "20ms"
+runs = 100
+warmups = 20
+interval = "1ms"
+work = 100000
+sleep = "100ms"
 
 [stages.clone]
 image = "typst/clone"
@@ -83,10 +100,10 @@ networking   = false
 image = "typst/pgo-profile"
 soft_timeout = "60m"
 hard_timeout = "65m"
-memory_limit = "2g"
-swap_limit   = "2.5g"
+memory_limit = "4g"
+swap_limit   = "4.5g"
 cpu_limit    = 2.0
-networking   = false
+networking   = true
 cpu_cores    = "1,2"
 
 [stages.pgo_build]

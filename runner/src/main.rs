@@ -79,140 +79,26 @@ async fn main() -> anyhow::Result<()> {
 
     warn!("PGO profiled built");
 
-    let bench_res = sandbox.bench_e2e(&profile, &docker, &samples, false).await?;
+    let bench_res = sandbox.bench_e2e(&profile, &docker, &samples, false, true).await?;
     if bench_res.exitcode != 0 {
         bail!("Failed to bench");
     }
 
-    warn!("Bench");
+    warn!("Bench PGO");
 
-    let mut procinfo = Vec::new();
-    for sample in profile.samples.to_results_file(&sandbox.results) {
-        tracing::info!("opening sample file: {}", sample.display());
-        let file = tokio::fs::File::open(&sample)
-            .await
-            .context("failed to open bench output file")?
-            .into_std()
-            .await;
-
-        let parsed: SamplingResults = serde_json::from_reader(&file)
-            .context("failed to parse bench output file")?;
-
-        procinfo.push(BenchSamples {
-            name: sample.file_name().unwrap().to_string_lossy().into(),
-            user_time: parsed
-                .samples
-                .iter()
-                .find(|s| s.metric == Metric::UserCpuTime)
-                .context("missing user CPU time")?
-                .samples
-                .clone(),
-            system_time: parsed
-                .samples
-                .iter()
-                .find(|s| s.metric == Metric::SystemCpuTime)
-                .context("missing system CPU time")?
-                .samples
-                .clone(),
-            virtual_memory: parsed
-                .samples
-                .iter()
-                .find(|s| s.metric == Metric::VirtualMemory)
-                .context("missing virtual memory")?
-                .samples
-                .clone(),
-            resident_memory: parsed
-                .samples
-                .iter()
-                .find(|s| s.metric == Metric::ResidentMemory)
-                .context("missing resident memory")?
-                .samples
-                .clone(),
-            cpu_percent: parsed
-                .samples
-                .iter()
-                .find(|s| s.metric == Metric::Load)
-                .context("missing CPU load")?
-                .samples
-                .clone(),
-        });
-    }
-
-    std::fs::write(
-        "procinfo_pgo.json",
-        serde_json::to_string(&procinfo).context("failed to serialize procinfo")?,
-    )?;
-
-    let mut build = sandbox.build(&profile, &docker).await?;
+    let build = sandbox.build(&profile, &docker).await?;
     if build.exitcode != 0 {
         bail!("Failed to build");
     }
 
     warn!("Built");
 
-    let bench_res = sandbox.bench_e2e(&profile, &docker, &samples, false).await?;
+    let bench_res = sandbox.bench_e2e(&profile, &docker, &samples, false, false).await?;
     if bench_res.exitcode != 0 {
         bail!("Failed to bench");
     }
 
-    warn!("Bench");
-
-    let mut procinfo = Vec::new();
-    for sample in profile.samples.to_results_file(&sandbox.results) {
-        tracing::info!("opening sample file: {}", sample.display());
-        let file = tokio::fs::File::open(&sample)
-            .await
-            .context("failed to open bench output file")?
-            .into_std()
-            .await;
-
-        let parsed: SamplingResults = serde_json::from_reader(&file)
-            .context("failed to parse bench output file")?;
-
-        procinfo.push(BenchSamples {
-            name: sample.file_name().unwrap().to_string_lossy().into(),
-            user_time: parsed
-                .samples
-                .iter()
-                .find(|s| s.metric == Metric::UserCpuTime)
-                .context("missing user CPU time")?
-                .samples
-                .clone(),
-            system_time: parsed
-                .samples
-                .iter()
-                .find(|s| s.metric == Metric::SystemCpuTime)
-                .context("missing system CPU time")?
-                .samples
-                .clone(),
-            virtual_memory: parsed
-                .samples
-                .iter()
-                .find(|s| s.metric == Metric::VirtualMemory)
-                .context("missing virtual memory")?
-                .samples
-                .clone(),
-            resident_memory: parsed
-                .samples
-                .iter()
-                .find(|s| s.metric == Metric::ResidentMemory)
-                .context("missing resident memory")?
-                .samples
-                .clone(),
-            cpu_percent: parsed
-                .samples
-                .iter()
-                .find(|s| s.metric == Metric::Load)
-                .context("missing CPU load")?
-                .samples
-                .clone(),
-        });
-    }
-
-    std::fs::write(
-        "procinfo_normal.json",
-        serde_json::to_string(&procinfo).context("failed to serialize procinfo")?,
-    )?;
+    warn!("Bench normal");
    /*let addr = std::env::var("AMQP_ADDR").unwrap_or_else(|_| "amqp://127.0.0.1:5672/%2f".into());
     let conn = Connection::connect(
         &addr,

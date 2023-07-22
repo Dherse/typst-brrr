@@ -155,9 +155,9 @@ Programmable photonic, photonic circuit design, programming language, photonic c
 #include "./content/2_ecosystem.typ"
 #include "./content/3_translation.typ"
 #include "./content/4_phos.typ"
-#include "./content/5_examples.typ"
+/*#include "./content/5_examples.typ"
 #include "./content/6_future_work.typ"
-#include "./content/7_conclusion.typ"
+#include "./content/7_conclusion.typ"*/
 
 #pagebreak(weak: true)
 #show bibliography: it => {

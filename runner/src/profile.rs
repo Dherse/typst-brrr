@@ -41,6 +41,9 @@ pub struct Samples {
 
     /// The sample files, relative to the root directory
     pub files: Vec<PathBuf>,
+
+    /// The training files for PGO, relative to the root directory
+    pub training: Vec<PathBuf>,
 }
 
 impl Samples {
@@ -48,6 +51,16 @@ impl Samples {
         let path = PathBuf::from("/samples");
 
         self.files
+            .iter()
+            .map(|p| path.join(p))
+            .map(|path| path.display().to_string())
+            .reduce(|a, b| format!("{},{}", a, b))
+    }
+
+    pub fn to_training_env(&self) -> Option<String> {
+        let path = PathBuf::from("/samples");
+
+        self.training
             .iter()
             .map(|p| path.join(p))
             .map(|path| path.display().to_string())
